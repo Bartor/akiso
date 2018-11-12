@@ -1,0 +1,1 @@
+find -maxdepth 1 -type f -name '*' | sed 'p;s/./\L&/g' | xargs -n 2 -d '\n' mv -i
