@@ -150,7 +150,7 @@ oldBytesOut=${networkArray[9]}
 while :
 do
 	sleep 1
-	clear
+	tput cup 0 0
 	networkString=$(cat /proc/net/dev | grep 'eth0' | sed 's/  */ /g')
 	uptimeSeconds=$(cat /proc/uptime | sed 's/\..*$//')
 	loadString=$(cat /proc/loadavg | sed 's/ .*$//')
@@ -168,8 +168,8 @@ do
 	echo Output graph
 	drawOut
 	
-	echo ⇓ `convertBytes $((bytesIn-oldBytesIn))` ⇑ `convertBytes $((bytesOut-oldBytesOut))`
-	echo `displaytime $uptimeSeconds`
+	echo ⇓ `convertBytes $((bytesIn-oldBytesIn))` ⇑ `convertBytes $((bytesOut-oldBytesOut))                             `
+	echo `displaytime $uptimeSeconds                            `
 	echo Load ${loadArray[0]}
 
 	oldBytesIn=$bytesIn

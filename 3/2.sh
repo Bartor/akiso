@@ -1,1 +1,1 @@
-ls /proc | grep ^[0-9] | xargs -I{} sh -c "echo PROCESS {} && echo && cat /proc/{}/status | grep -E '^Name|^Pid|^PPid|^State|^Uid' && echo -n 'Files used: ' && ls -1 2>/dev/null /proc/{}/fd | wc -l && echo"
+ls /proc | grep ^[0-9] | xargs -I{} sh -c "echo PROCESS {} && echo && cat /proc/{}/status 2>/dev/null | grep -E '^Name|^Pid|^PPid|^State|^Uid' && echo -n 'Files used: ' && ls -1 2>/dev/null /proc/{}/fd | wc -l && echo"
