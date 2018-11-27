@@ -4,6 +4,10 @@
 #include <signal.h>
 #include <linux/limits.h>
 
+/* Handler sygnałów
+ * przjmuje sygnały 17 i czeka na proces, aby go zabić 
+ * oraz 2 i ignoruje go
+ */
 void signal_handler(int no) {
 	if (no == 17) {
 		waitpid(-1, NULL, WNOHANG);
@@ -12,6 +16,10 @@ void signal_handler(int no) {
 	}
 }
 
+/* Funkcja wywołyana do wyświetlenia podstawowego promptu
+ * wpisytwania oraz utworzenia tablicy stringów po rozdzieleniu
+ * go znakiem zawartym w s. Zwraca długość gotowej tablicy.
+ */
 int promptRead (char* outputarray[]) {
 	char input[PATH_MAX];
 	char* word;
@@ -32,7 +40,6 @@ int promptRead (char* outputarray[]) {
 		i++;
 		word = strtok(NULL, s);
 	}
-	
 	return i;
 }
 
