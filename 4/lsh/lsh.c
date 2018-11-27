@@ -37,10 +37,7 @@ int promptRead (char* outputarray[]) {
 }
 
 int main() {
-	char input[PATH_MAX]; //tu zapisujemy input
 	char* words[PATH_MAX];
-	
-	char s[2] = " ";
 	
 	signal(SIGCHLD, signal_handler);
 	//signal(SIGINT, signal_handler);
