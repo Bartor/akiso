@@ -5,35 +5,53 @@
 #include <linux/limits.h>
 
 void signal_handler(int no) {
-	if (no = 17) {
+	if (no == 17) {
 		waitpid(-1, NULL, WNOHANG);
+	} else if (no == 2) {
+		//ignore
 	}
 }
 
-int main() {
+int promptRead (char* outputarray[]) {
 	char input[PATH_MAX];
-	char * word;
-	char * words[1024]; //na razie nie obsługujemy powyżej 1024 słów w komendzie
+	char* word;
+	char s[2] = " ";
+	
+	char cwd[PATH_MAX];
+	getcwd(cwd, sizeof(cwd));
+	printf("[\e[38;5;160mLSH \e[38;5;33m%s\e[0m] ", cwd);
+	
+	gets(input);
+	
+	int i = 0;
+	
+	word = strtok(input, s);
+	while (word != NULL) {
+		outputarray[i] = calloc(strlen(word) + 1, sizeof(char));
+		strcpy(outputarray[i], word);
+		i++;
+		word = strtok(NULL, s);
+	}
+	
+	return i;
+}
+
+int main() {
+	char input[PATH_MAX]; //tu zapisujemy input
+	char* words[PATH_MAX];
+	
 	char s[2] = " ";
 	
 	signal(SIGCHLD, signal_handler);
+	//signal(SIGINT, signal_handler);
 	
 	while(1) {
 		int waitc = 1;
 		
-		char cwd[PATH_MAX];
-		getcwd(cwd, sizeof(cwd));
-		printf("[\e[38;5;160mLSH \e[38;5;33m%s\e[0m] ", cwd);
-		gets(input);
+		int i = promptRead(words);
 		
-		word = strtok(input, s);
-		
-		int i = 0;
-		while (word != NULL) {
-			words[i] = malloc(strlen(word) + 1);
-			strcpy(words[i], word);
-			i++;
-			word = strtok(NULL, s);
+		if (i == 0) {
+			 continue;
 		}
 		if (words[i - 1][0] == '&') {
 			waitc = 0;
@@ -48,8 +66,8 @@ int main() {
 			chdir(words[1]);
 			continue;
 		} else if (words[0][0] == 'e' && words[0][1] == 'x' && words[0][2] == 'i' && words[0][3] == 't' && words[0][4] == '\0') {
-			while ((wpid = wait(&status)) > 0);
-			break;
+			kill(0, 9);
+			exit(0);
 		}
 		
 		int child = fork();
@@ -61,7 +79,6 @@ int main() {
 			if (waitc) {
 				wpid = waitpid(child, &status, 0);
 			}
-			//printf("Parent process: %d\n", w);
 		}
 	}
 	return 0;
