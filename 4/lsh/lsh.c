@@ -4,6 +4,8 @@
 #include <signal.h>
 #include <linux/limits.h>
 
+int waitc = 1;
+
 void signal_handler(int no) {
 	if (no == 17) {
 		waitpid(-1, NULL, WNOHANG);
@@ -21,8 +23,11 @@ int promptRead (char* outputarray[]) {
 	getcwd(cwd, sizeof(cwd));
 	printf("[\e[38;5;160mLSH \e[38;5;33m%s\e[0m] ", cwd);
 	
-	gets(input);
-	
+	fgets(input, PATH_MAX, stdin);
+	if (strlen(input) > 0 && input[strlen(input) - 1] == '\n') {
+		input[strlen(input) - 1] = '\0';
+	}
+
 	int i = 0;
 	
 	word = strtok(input, s);
@@ -98,9 +103,12 @@ void pipeThrough(char* pipedCommands[], int size) {
 					}
 				}
 			}
-				
-
-				
+			
+			for (int j = 0; j < commandsCount - 1; j++) {
+				close(fd[j][0]);
+				close(fd[j][1]);
+			}
+	
 			execvp(commands[i][0], commands[i]);
 			perror("execvperror");
 			_exit(1);
@@ -113,16 +121,19 @@ void pipeThrough(char* pipedCommands[], int size) {
 		close(fd[j][1]);
 	}
 	
-	for(int i = commandsCount - 1; i > -1; i--) {
-		if(pids[i] > 0) {
-			int status;
-			printf("waiting for %d\n", pids[i]);
-			waitpid(pids[i], &status, 0);
-			printf("process %d exited with %d\n", pids[i], status);
-		} else {
-			printf("why the fuck pid on %d is %d\n", i, pids[i]);
+	if(waitc) {
+		for(int i = commandsCount - 1; i > -1; i--) {
+			if(pids[i] > 0) {
+				int status;
+				//printf("waiting for %d\n", pids[i]);
+				waitpid(pids[i], &status, 0);
+				//printf("process %d exited with %d\n", pids[i], status);
+			} else {
+				//printf("why the fuck pid on %d is %d\n", i, pids[i]);
+			}
 		}
 	}
+
 	
 	exit(0);
 }
@@ -134,10 +145,8 @@ int main() {
 	//signal(SIGINT, signal_handler);
 	
 	while(1) {
-		int waitc = 1;
-		
 		int i = promptRead(words);
-		
+
 		if (i == 0) {
 			 continue;
 		}
@@ -150,6 +159,13 @@ int main() {
 		} else if (words[0][0] == 'e' && words[0][1] == 'x' && words[0][2] == 'i' && words[0][3] == 't' && words[0][4] == '\0') {
 			kill(0, 9);
 			exit(0);
+		}
+		
+		if (words[i-1][0] == '&' && words[i-1][1] == '\0') {
+			waitc = 0;
+			i--;
+		} else {
+			waitc = 1;
 		}
 		
 		int child = fork();
