@@ -4,10 +4,6 @@
 #include <signal.h>
 #include <linux/limits.h>
 
-/* Handler sygnałów
- * przjmuje sygnały 17 i czeka na proces, aby go zabić 
- * oraz 2 i ignoruje go
- */
 void signal_handler(int no) {
 	if (no == 17) {
 		waitpid(-1, NULL, WNOHANG);
@@ -16,10 +12,6 @@ void signal_handler(int no) {
 	}
 }
 
-/* Funkcja wywołyana do wyświetlenia podstawowego promptu
- * wpisytwania oraz utworzenia tablicy stringów po rozdzieleniu
- * go znakiem zawartym w s. Zwraca długość gotowej tablicy.
- */
 int promptRead (char* outputarray[]) {
 	char input[PATH_MAX];
 	char* word;
@@ -43,6 +35,84 @@ int promptRead (char* outputarray[]) {
 	return i;
 }
 
+void pipeThrough(char* pipedCommands[], int size) {
+
+	int foundIndex = size;
+	int childPid = -1;
+	int commandsCount = 0;
+	char* commands[size][size];
+	for (int i = size - 1; i > -1; i--) {
+		
+		if (pipedCommands[i][0] == '|' || i == 0) {
+
+			int k = 0;
+			int j = i + 1;
+			if (i == 0) {
+				j = 0;
+			}
+			for (; j < foundIndex; j++) {
+				commands[commandsCount][k] = calloc(strlen(pipedCommands[j]) + 1, sizeof(char));
+				strcpy(commands[commandsCount][k], pipedCommands[j]);
+				k++;
+			}
+			commands[commandsCount][k] = NULL;
+			
+			commandsCount++;
+			foundIndex = i;
+		}
+	}
+	
+	int fd[commandsCount - 1][2];
+	for (int i = 0; i < commandsCount - 1; i++) {
+		if (pipe(fd[i]) == -1) {
+			perror("pipe error");
+		}
+		printf("creating fd[%d] 0:%d 1:%d\n", i, fd[i][0], fd[i][1]);
+	}
+	
+	int status;
+	printf("command count: %d\n\n", commandsCount);
+	
+	for (int i = 0; i < commandsCount; i++) {
+		printf("iteration over i=%d childPid=%d command=%s:\n", i, childPid, commands[i][0]);
+		if (childPid != 0) {
+			childPid = fork();
+			if (childPid == 0) {
+				if (commandsCount > 1) {
+					if (i == 0) {
+						printf("connecting child%d %s 0 to %d\n", i, commands[i][0], fd[i][0]);
+						if (dup2(fd[i][0], 0) == -1) {
+							perror("dup2 error on i=0");
+						}
+						close(fd[i][0]);
+					} else if (i != commandsCount - 1) {
+						printf("connecting child%d %s 1 to %d 0 to %d\n", i, commands[i][0], fd[i-1][1], fd[i][0]);
+						if (dup2(fd[i-1][1], 1) == -1) {
+							perror("dup2 error");
+						}
+						close(fd[i-1][1]);
+						if (dup2(fd[i][0], 0) == -1) {
+							perror("dup2 error");
+						}
+						close(fd[i][0]);
+					} else {
+						printf("connecting child%d %s 1 to %d\n", i, commands[i][0], fd[i-1][1]);
+						if (dup2(fd[i-1][1], 1) == -1) {
+							perror("dup2 error on i=commands-1");
+						}
+						close(fd[i-1][1]);
+					}
+				}
+				
+				execvp(commands[i][0], commands[i]);
+				perror("execvperror");
+			} else {
+				printf("child proc id=%d\n", childPid);
+			}
+		}
+	}
+}
+
 int main() {
 	char* words[PATH_MAX];
 	
@@ -56,12 +126,6 @@ int main() {
 		
 		if (i == 0) {
 			 continue;
-		}
-		if (words[i - 1][0] == '&') {
-			waitc = 0;
-			words[i - 1] = NULL;
-		} else {
-			words[i] = NULL;
 		}
 		
 		int status, wpid;
@@ -77,7 +141,7 @@ int main() {
 		int child = fork();
 		
 		if (child == 0) {
-			execvp(words[0], words);
+			pipeThrough(words, i);
 			exit(0);
 		} else {
 			if (waitc) {
