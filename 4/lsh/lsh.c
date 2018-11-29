@@ -38,7 +38,6 @@ int promptRead (char* outputarray[]) {
 void pipeThrough(char* pipedCommands[], int size) {
 
 	int foundIndex = size;
-	int childPid = -1;
 	int commandsCount = 0;
 	char* commands[size][size];
 	for (int i = size - 1; i > -1; i--) {
@@ -70,48 +69,61 @@ void pipeThrough(char* pipedCommands[], int size) {
 		//printf("creating fd[%d] 0:%d 1:%d\n", i, fd[i][0], fd[i][1]);
 	}
 	
-	int status;
+	int pids[commandsCount];
+	int status, wpid;
 	//printf("command count: %d\n\n", commandsCount);
 	
 	for (int i = 0; i < commandsCount; i++) {
 		//printf("iteration over i=%d childPid=%d command=%s:\n", i, childPid, commands[i][0]);
-		if (childPid != 0) {
-			childPid = fork();
-			if (childPid == 0) {
-				if (commandsCount > 1) {
-					if (i == 0) {
-						//printf("connecting child%d %s 0 to %d\n", i, commands[i][0], fd[i][0]);
-						if (dup2(fd[i][0], 0) == -1) {
-							perror("dup2 error on i=0");
-						}
-					} else if (i != commandsCount - 1) {
-						//printf("connecting child%d %s 1 to %d 0 to %d\n", i, commands[i][0], fd[i-1][1], fd[i][0]);
-						if (dup2(fd[i-1][1], 1) == -1) {
-							perror("dup2 error");
-						}
-						if (dup2(fd[i][0], 0) == -1) {
-							perror("dup2 error");
-						}
-					} else {
-						//printf("connecting child%d %s 1 to %d\n", i, commands[i][0], fd[i-1][1]);
-						if (dup2(fd[i-1][1], 1) == -1) {
-							perror("dup2 error on i=commands-1");
-						}
+		if ((pids[i] = fork()) == 0) {
+
+			if (commandsCount > 1) {
+				if (i == 0) {
+					//printf("connecting child%d %s 0 to %d\n", i, commands[i][0], fd[i][0]);
+					if (dup2(fd[i][0], 0) == -1) {
+						perror("dup2 error on i=0");
+					}
+				} else if (i != commandsCount - 1) {
+					//printf("connecting child%d %s 1 to %d 0 to %d\n", i, commands[i][0], fd[i-1][1], fd[i][0]);
+					if (dup2(fd[i-1][1], 1) == -1) {
+						perror("dup2 error");
+					}
+					if (dup2(fd[i][0], 0) == -1) {
+						perror("dup2 error");
+					}
+				} else {
+					//printf("connecting child%d %s 1 to %d\n", i, commands[i][0], fd[i-1][1]);
+					if (dup2(fd[i-1][1], 1) == -1) {
+						perror("dup2 error on i=commands-1");
 					}
 				}
-				
-				for (int j = 0; j < commandsCount -1; j++) {
-					close(fd[j][0]);
-					close(fd[j][1]);
-				}
-				
-				execvp(commands[i][0], commands[i]);
-				perror("execvperror");
-			} else {
-				//printf("child proc id=%d\n", childPid);
 			}
+				
+
+				
+			execvp(commands[i][0], commands[i]);
+			perror("execvperror");
+			_exit(1);
+			
 		}
 	}
+	
+	for (int j = 0; j < commandsCount - 1; j++) {
+		close(fd[j][0]);
+		close(fd[j][1]);
+	}
+	
+	for(int i = commandsCount - 1; i > -1; i--) {
+		if(pids[i] > 0) {
+			int status;
+			printf("waiting for %d\n", pids[i]);
+			waitpid(pids[i], &status, 0);
+			printf("process %d exited with %d\n", pids[i], status);
+		} else {
+			printf("why the fuck pid on %d is %d\n", i, pids[i]);
+		}
+	}
+	
 	exit(0);
 }
 
@@ -143,13 +155,10 @@ int main() {
 		int child = fork();
 		
 		if (child == 0) {
-			printf("preparing to pipe!\n");
 			pipeThrough(words, i);
 		} else {
 			if (waitc) {
-				printf("waiting...\n");
 				wpid = waitpid(child, &status, 0);
-				printf("waited!\n");
 			}
 		}
 	}
