@@ -253,6 +253,8 @@ int main() {
 				wpid = waitpid(child, &status, 0);
 			}
 		}
+		
+		while (0 < --i) free(words[i]);
 	}
 	return 0;
 }
