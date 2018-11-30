@@ -2,6 +2,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <signal.h>
+#include <fcntl.h>
 #include <linux/limits.h>
 
 int waitc = 1;
@@ -39,6 +40,68 @@ int promptRead (char* outputarray[]) {
 	}
 	return i;
 }
+
+void addRedirects(int size, char* commands[][size], int index, int mode) {
+	
+	int commandLength = 0;
+	while (commands[index][commandLength] != NULL) commandLength++;
+	
+	for(int j = 0; j < commandLength; j++) {
+		
+		if(commands[index][j][0] == '>' && (mode == 1 || mode == 2)) {
+			char path[PATH_MAX];
+			for(int k = 1; k < strlen(commands[index][j]); k++) {
+				path[k-1] = commands[index][j][k];
+			}
+			int file;
+			if ((file = open(path, O_RDWR | O_CREAT | O_APPEND)) == -1) {
+				perror("> error");
+				_exit(1);
+			}
+			if (dup2(file, 1) == -1) {
+				perror("dup2 error when tryging to redirect to file");
+			}
+						
+			commands[index][j] = NULL;
+							
+		} else if (commands[index][j][0] == '2' && commands[index][j][1] == '>') {
+					
+			char path[PATH_MAX];
+			for(int k = 2; k < strlen(commands[index][j]); k++) {
+				path[k-2] = commands[index][j][k];
+			}
+						
+			int file;
+			if ((file = open(path, O_RDWR | O_CREAT | O_APPEND)) == -1) {
+				perror("2> error");
+				_exit(1);
+			}
+			if (dup2(file, 2) == -1) {
+				perror("dup2 error when tryging to redirect to file");
+			}
+					
+			commands[index][j] = NULL;
+		} else if (commands[index][j][0] == '<' && (mode == 0 || mode == 2)) {
+			char path[PATH_MAX];
+			for(int k = 1; k < strlen(commands[index][j]); k++) {
+				path[k-1] = commands[index][j][k];
+			}
+			int file;
+			if ((file = open(path, O_RDWR | O_CREAT | O_APPEND)) == -1) {
+				perror("> error");
+				_exit(1);
+			}
+			if (dup2(file, 0) == -1) {
+				perror("dup2 error when tryging to redirect to file");
+			}
+						
+			commands[index][j] = NULL;
+
+		}
+	}
+
+}
+
 
 void pipeThrough(char* pipedCommands[], int size) {
 
@@ -81,14 +144,20 @@ void pipeThrough(char* pipedCommands[], int size) {
 	for (int i = 0; i < commandsCount; i++) {
 		//printf("iteration over i=%d childPid=%d command=%s:\n", i, childPid, commands[i][0]);
 		if ((pids[i] = fork()) == 0) {
-
+			
+			//0 - INPUT
+			//1 - OUTPUT
+			
 			if (commandsCount > 1) {
-				if (i == 0) {
+				if (i == 0) { //case for the LAST command in pipes
 					//printf("connecting child%d %s 0 to %d\n", i, commands[i][0], fd[i][0]);
 					if (dup2(fd[i][0], 0) == -1) {
 						perror("dup2 error on i=0");
 					}
-				} else if (i != commandsCount - 1) {
+					
+					addRedirects(size, commands, i, 1);
+					
+				} else if (i != commandsCount - 1) { //case for all the MIDDLE commands in pipes
 					//printf("connecting child%d %s 1 to %d 0 to %d\n", i, commands[i][0], fd[i-1][1], fd[i][0]);
 					if (dup2(fd[i-1][1], 1) == -1) {
 						perror("dup2 error");
@@ -96,12 +165,19 @@ void pipeThrough(char* pipedCommands[], int size) {
 					if (dup2(fd[i][0], 0) == -1) {
 						perror("dup2 error");
 					}
-				} else {
+					
+					addRedirects(size, commands, i, -1);
+					
+				} else { //case for the FRIST command in pipes
 					//printf("connecting child%d %s 1 to %d\n", i, commands[i][0], fd[i-1][1]);
 					if (dup2(fd[i-1][1], 1) == -1) {
 						perror("dup2 error on i=commands-1");
 					}
+					
+					addRedirects(size, commands, i, 0);
 				}
+			} else {
+				addRedirects(size, commands, 0, 2);
 			}
 			
 			for (int j = 0; j < commandsCount - 1; j++) {
