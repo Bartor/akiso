@@ -1,3 +1,3 @@
 # Architektura Komputerów i Systemy Operacyjne
 
-Rozwiązania mające na celu pokazanie, jak nie pisać skryptów w bashu.
+Trochę skryptów w bashu, trochę programów w C.
