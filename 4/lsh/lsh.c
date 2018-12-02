@@ -247,7 +247,7 @@ int main() {
 	char* words[PATH_MAX];
 	
 	signal(SIGCHLD, signal_handler);
-	//signal(SIGINT, signal_handler);
+	signal(SIGINT, signal_handler);
 	
 	while(1) {
 		int i = promptRead(words);
@@ -275,12 +275,16 @@ int main() {
 			waitc = 1;
 		}
 		
+		//let's let children catch SIGINT to exit
+		signal(SIGINT, SIG_DFL);
+		signal(SIGCHLD, signal_handler);
 		// let's fork and leave all the commands handling to fork
 		int child = fork();
 		
 		if (child == 0) {
 			pipeThrough(words, i);
 		} else {
+			signal(SIGINT, signal_handler);
 			if (waitc) {
 				wpid = waitpid(child, &status, 0);
 			}
