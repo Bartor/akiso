@@ -2,11 +2,16 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 #include <linux/limits.h>
 
 void convert(char* out, int number, int base) {
 	int i = 63;
 	int j = 0;
+	if (number < 0) {
+		number = 0 - number;
+		out[--i] = '-';
+	}
 	do {
 		out[i] = "0123456789ABCDEF"[number % base];
 		i--;
@@ -16,6 +21,24 @@ void convert(char* out, int number, int base) {
 		out[j++] = out[i];
 	}
 	out[j] = '\0';
+}
+
+int deconvert(char* string, int base) {
+	char numbers[17] = "0123456789ABCDEF";
+	int result = 0;
+	int negative = 0;
+	if (string[0] == '-') negative = 1;
+	int numLen = strlen(string);
+	for (int i = numLen - 1; i > negative - 1; i--) {
+		for (int j = 0; j < 17; j++) {
+			if (string[i] == numbers[j]) {
+				result += j*pow(base, numLen - i - 1);
+				break;
+			}
+		}
+	}
+	if (negative) return -1*result;
+	else return result;
 }
 
 
@@ -70,6 +93,7 @@ void myprintf(char* pattern, ...) {
 }
 
 int main(void) {
-	myprintf("PIESEK %s TO %d FAJNE %x ZWIERZE %b WIELCE", "?", 123, 123, 123);
+	myprintf("PIESEK %s TO %b FAJNE %d ZWIERZE %x WIELCE", "?", 123, 123, 123);
+	printf("%d\n", deconvert("-AB", 16));
 	return 0;
 }
