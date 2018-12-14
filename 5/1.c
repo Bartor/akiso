@@ -16,7 +16,6 @@ void convert(char* out, int number, int base) {
 		out[j++] = out[i];
 	}
 	out[j] = '\0';
-	return out;
 }
 
 
