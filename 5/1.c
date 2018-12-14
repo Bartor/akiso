@@ -10,7 +10,8 @@ void convert(char* out, int number, int base) {
 	int j = 0;
 	if (number < 0) {
 		number = 0 - number;
-		out[--i] = '-';
+		j = 1;
+		out[0] = '-';
 	}
 	do {
 		out[i] = "0123456789ABCDEF"[number % base];
@@ -29,18 +30,14 @@ int deconvert(char* string, int base) {
 	int negative = 0;
 	if (string[0] == '-') negative = 1;
 	int numLen = strlen(string);
-	printf("numlen %d\n", numLen);
 	for (int i = numLen - 1 - negative; i > negative - 1; i--) {
-		printf("char %d %c\n", i, string[i]);
 		for (int j = 0; j < base + 1; j++) {
 			if (string[i] == numbers[j]) {
 				result += j*pow(base, numLen - i - 2);
-				printf("res %d\n", result);
 			}
 		}
 	}
-	printf("final %d\n", result);
-	if (negative) return -1*result;
+	if (negative) return result*-1;
 	else return result;
 }
 
@@ -92,6 +89,7 @@ void myprintf(char* pattern, ...) {
 		}
 		int a = write(1, &pattern[i], 1);
 	}
+	va_end(vl);
 	write(1, "\n\0", 3);
 }
 
@@ -109,22 +107,34 @@ int myscanf(char* pattern, ...) {
 	} else if (!strcmp(pattern, "%s")) {
 		char* in;
 		in = va_arg(vl, char*);
-		*in = input;
+		strcpy(in, input);
 	} else if (!strcmp(pattern, "%x")) {
-		char* in;
+		int* in;
 		in = va_arg(vl, int*);
 		*in = deconvert(input, 16);
 	} else if (!strcmp(pattern, "%b")) {
-		char* in;
+		int* in;
 		in = va_arg(vl, int*);
 		*in = deconvert(input, 2);
 	}
+	va_end(vl);
 	return size;
 }
 
 int main(void) {
-	int a = 0;
-	myscanf("%x", &a);
-	printf("%d", a);
+	char* a;
+	myprintf("Enter a string ");
+	myscanf("%s", a);
+	int b;
+	myprintf("Enter an int ");
+	myscanf("%d", &b);
+	int c;
+	myprintf("Enter a bin ");
+	myscanf("%b", &c);
+	int d;
+	myprintf("Enter a hex ");
+	myscanf("%x", &d);
+	
+	myprintf("You entered: %s %d \n %d \n %d ", a, b, c, d);
 	return 0;
 }
