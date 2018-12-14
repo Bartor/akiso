@@ -29,14 +29,17 @@ int deconvert(char* string, int base) {
 	int negative = 0;
 	if (string[0] == '-') negative = 1;
 	int numLen = strlen(string);
-	for (int i = numLen - 1; i > negative - 1; i--) {
-		for (int j = 0; j < 17; j++) {
+	printf("numlen %d\n", numLen);
+	for (int i = numLen - 1 - negative; i > negative - 1; i--) {
+		printf("char %d %c\n", i, string[i]);
+		for (int j = 0; j < base + 1; j++) {
 			if (string[i] == numbers[j]) {
-				result += j*pow(base, numLen - i - 1);
-				break;
+				result += j*pow(base, numLen - i - 2);
+				printf("res %d\n", result);
 			}
 		}
 	}
+	printf("final %d\n", result);
 	if (negative) return -1*result;
 	else return result;
 }
@@ -92,8 +95,36 @@ void myprintf(char* pattern, ...) {
 	write(1, "\n\0", 3);
 }
 
+int myscanf(char* pattern, ...) {
+	va_list vl;
+	va_start(vl, pattern);
+	char input[1024];
+	int size = read(0, &input, 1024);
+	input[size] = '\0';
+	
+	if (!strcmp(pattern, "%d")) {
+		int* in;
+		in = va_arg(vl, int*);
+		*in = deconvert(input, 10);
+	} else if (!strcmp(pattern, "%s")) {
+		char* in;
+		in = va_arg(vl, char*);
+		*in = input;
+	} else if (!strcmp(pattern, "%x")) {
+		char* in;
+		in = va_arg(vl, int*);
+		*in = deconvert(input, 16);
+	} else if (!strcmp(pattern, "%b")) {
+		char* in;
+		in = va_arg(vl, int*);
+		*in = deconvert(input, 2);
+	}
+	return size;
+}
+
 int main(void) {
-	myprintf("PIESEK %s TO %b FAJNE %d ZWIERZE %x WIELCE", "?", 123, 123, 123);
-	printf("%d\n", deconvert("-AB", 16));
+	int a = 0;
+	myscanf("%x", &a);
+	printf("%d", a);
 	return 0;
 }
