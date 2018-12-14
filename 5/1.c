@@ -43,16 +43,16 @@ int deconvert(char* string, int base) {
 
 
 void myprintf(char* pattern, ...) {
-	va_list vl;
-	va_start(vl, pattern);
-
+	char *p = (char *) &pattern + sizeof(char)*strlen(pattern);
+	
 	for(int i = 0; i < strlen(pattern); i++) {
 		if (pattern[i] == '%' && i < strlen(pattern) - 1) {
 			char output[1024];
 			switch (pattern[i+1]) {
 				case 'd': {
 					int number;
-					number = va_arg(vl, int);
+					number = *((int *)p);
+					p += sizeof(int);
 					convert(output, number, 10);
 					write(1, output, strlen(output));
 					i+=2;;
@@ -60,14 +60,16 @@ void myprintf(char* pattern, ...) {
 				}
 				case 's': {
 					char* text;
-					text = va_arg(vl, char*);
+					text = *((char *)p);
+					p += sizeof(char*);
 					write(1, text, strlen(text));
 					i+=2;
 					break;
 				}
 				case 'x': {
 					int number;
-					number = va_arg(vl, int);
+					number = *((int *)p);
+					p += sizeof(int);
 					convert(output, number, 16);
 					write(1, output, strlen(output));
 					i+=2;
@@ -75,7 +77,8 @@ void myprintf(char* pattern, ...) {
 				}
 				case 'b': {
 					int number;
-					number = va_arg(vl, int);
+					number = *((int *)p);
+					p += sizeof(int);
 					convert(output, number, 2);
 					write(1, output, strlen(output));
 					i+=2;
@@ -89,35 +92,39 @@ void myprintf(char* pattern, ...) {
 		}
 		int a = write(1, &pattern[i], 1);
 	}
-	va_end(vl);
+	p = NULL;
 	write(1, "\n\0", 3);
 }
 
 int myscanf(char* pattern, ...) {
-	va_list vl;
-	va_start(vl, pattern);
+	char* p = (char *) &pattern + sizeof(pattern);
+	
 	char input[1024];
 	int size = read(0, &input, 1024);
 	input[size] = '\0';
 	
 	if (!strcmp(pattern, "%d")) {
 		int* in;
-		in = va_arg(vl, int*);
+		in = ((int*) p);
+		p += sizeof(int*);
 		*in = deconvert(input, 10);
 	} else if (!strcmp(pattern, "%s")) {
 		char* in;
-		in = va_arg(vl, char*);
+		in = ((char*) p);
+		p += sizeof(char*);
 		strcpy(in, input);
 	} else if (!strcmp(pattern, "%x")) {
 		int* in;
-		in = va_arg(vl, int*);
+		in = ((int**) p);
+		p += sizeof(int*);
 		*in = deconvert(input, 16);
 	} else if (!strcmp(pattern, "%b")) {
 		int* in;
-		in = va_arg(vl, int*);
+		in = ((int*) p);
+		p += sizeof(int*);
 		*in = deconvert(input, 2);
 	}
-	va_end(vl);
+	p = NULL;
 	return size;
 }
 
@@ -134,6 +141,7 @@ int main(void) {
 	int d;
 	myprintf("Enter a hex ");
 	myscanf("%x", &d);
+	printf("%s %d %d %d\n", a, b, c, d);
 	
 	myprintf("You entered: %s %d \n %d \n %d ", a, b, c, d);
 	return 0;
