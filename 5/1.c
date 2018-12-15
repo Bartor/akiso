@@ -5,6 +5,9 @@
 #include <math.h>
 #include <linux/limits.h>
 
+//compile with gcc -m32 -fno-stack-protector 1.c [-o 1] -lm
+
+//converts given number to number of given base up to 16 and puts it into out
 void convert(char* out, int number, int base) {
 	int i = 63;
 	int j = 0;
@@ -24,16 +27,17 @@ void convert(char* out, int number, int base) {
 	out[j] = '\0';
 }
 
+//converts the number stored in string to an integer
 int deconvert(char* string, int base) {
 	char numbers[17] = "0123456789ABCDEF";
 	int result = 0;
 	int negative = 0;
 	if (string[0] == '-') negative = 1;
 	int numLen = strlen(string);
-	for (int i = numLen - 1 - negative; i > negative - 1; i--) {
+	for (int i = numLen - 1; i > negative - 1; i--) {
 		for (int j = 0; j < base + 1; j++) {
 			if (string[i] == numbers[j]) {
-				result += j*pow(base, numLen - i - 2);
+				result += j*pow(base, numLen - 1 - i);
 			}
 		}
 	}
@@ -43,26 +47,29 @@ int deconvert(char* string, int base) {
 
 
 void myprintf(char* pattern, ...) {
-	char *p = (char *) &pattern + sizeof(char)*strlen(pattern);
+	char *p = (char *) &pattern + sizeof(pattern);
 	
 	for(int i = 0; i < strlen(pattern); i++) {
 		if (pattern[i] == '%' && i < strlen(pattern) - 1) {
 			char output[1024];
 			switch (pattern[i+1]) {
 				case 'd': {
-					int number;
-					number = *((int *)p);
+					int* number;
+					number = ((int *)p);
 					p += sizeof(int);
-					convert(output, number, 10);
+					convert(output, *number, 10);
 					write(1, output, strlen(output));
 					i+=2;;
 					break;
 				}
 				case 's': {
 					char* text;
-					text = *((char *)p);
+					text = *((char **) p);
 					p += sizeof(char*);
-					write(1, text, strlen(text));
+					while (text[0] != '\0') {
+						write(1, text, sizeof(char));
+						text++;
+					}
 					i+=2;
 					break;
 				}
@@ -96,31 +103,32 @@ void myprintf(char* pattern, ...) {
 	write(1, "\n\0", 3);
 }
 
-int myscanf(char* pattern, ...) {
-	char* p = (char *) &pattern + sizeof(pattern);
+int myscanf(const char* pattern, ...) {
+	char* p = (char *) &pattern + sizeof pattern;
 	
-	char input[1024];
-	int size = read(0, &input, 1024);
+	char* input = calloc(1024, sizeof(char));
+	int size = read(0, input, 1024);
+	if (input[size - 1] == '\n') input[size-1] = '\0';
 	input[size] = '\0';
 	
 	if (!strcmp(pattern, "%d")) {
 		int* in;
-		in = ((int*) p);
+		in = (int*)(*(int*)p);
 		p += sizeof(int*);
 		*in = deconvert(input, 10);
 	} else if (!strcmp(pattern, "%s")) {
-		char* in;
-		in = ((char*) p);
-		p += sizeof(char*);
-		strcpy(in, input);
+		char** in;
+		in = (char **)(*(char**) p);
+		*in = input;
+		p += sizeof(*in);
 	} else if (!strcmp(pattern, "%x")) {
 		int* in;
-		in = ((int**) p);
+		in = (int*)(*(int*)p);
 		p += sizeof(int*);
 		*in = deconvert(input, 16);
 	} else if (!strcmp(pattern, "%b")) {
 		int* in;
-		in = ((int*) p);
+		in = (int*)(*(int*)p);
 		p += sizeof(int*);
 		*in = deconvert(input, 2);
 	}
@@ -131,7 +139,7 @@ int myscanf(char* pattern, ...) {
 int main(void) {
 	char* a;
 	myprintf("Enter a string ");
-	myscanf("%s", a);
+	myscanf("%s", &a);
 	int b;
 	myprintf("Enter an int ");
 	myscanf("%d", &b);
@@ -141,8 +149,7 @@ int main(void) {
 	int d;
 	myprintf("Enter a hex ");
 	myscanf("%x", &d);
-	printf("%s %d %d %d\n", a, b, c, d);
-	
-	myprintf("You entered: %s %d \n %d \n %d ", a, b, c, d);
+
+	myprintf("You entered:\nstring: %s\nformat:\tdec\tbin\thex\t\nint:\t%d\t%b\t%x\nbin:\t%d\t%b\t%x\nhex:\t%d\t%b\t%x", a, b, b, b, c, c, c, d, d, d);
 	return 0;
 }
