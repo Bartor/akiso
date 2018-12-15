@@ -1,3 +1,40 @@
 # Architektura Komputerów i Systemy Operacyjne
 
-Trochę skryptów w bashu, trochę programów w C.
+Zadania wykonane w bashu i w C pod linuxem.
+
+## Opis zadań
+
+Skrótowe podsumowanie zadań z kolejnych list. Niewymienione tu zadania były teoretyczne, stąd też nie umieściłem odpowiedzi na nie w tym repozytorium.
+
+### Lista 1
+
+Zasadniczo zainstalowanie Archa, kilka rzeczy dotyczących biosu, gpt i mbr.
+
+### Lista 2
+
+6. Color code'y w escape sequences w C.
+7. Potok zmieniający nazwy wszystkich plików w katalogu na lowercase.
+
+### Lista 3
+
+1. Skrypt pokazujący podsumowanie informacji o systemie, w tym wykres aktywności sieciowej.
+2. Skrypt udający `ps`.
+3. Skrypt pobierający obrazek i cytat.
+4. Skrypt informujący o zmianach na stronie.
+
+### Lista 4
+
+1. Program uruchamiający basha z prawami roota.
+2. Programy testujące kilka rzeczy z `kill`.
+3. Implementacja własnej powłoki w C.
+4. Implementacja własnej powłoki w C.
+
+Zadania 3. i 4. znajdują się w jednym pliku `lsh.c`, w podfolderze `lsh`.
+
+### Lista 5
+
+1. Implementacja własnej wersji `printf` i `scanf` bez używania `va_list` ani kontroli io poza `write` i `read`.
+2. Wielowątkowe mnożenie macierzy.
+3. Komunikator minitalk oparty na `select` oraz socketach.
+4. Optymalizacja mnożenia macierzy pod cache procesora.
+
