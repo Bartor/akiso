@@ -1,13 +1,16 @@
-#include <stdio.h>  
+#include <stdio.h>
 #include <string.h>
-#include <stdlib.h>  
-#include <errno.h>  
+#include <stdlib.h>
+#include <errno.h>
 #include <unistd.h>
 #include <arpa/inet.h>
-#include <sys/types.h>  
-#include <sys/socket.h>  
-#include <netinet/in.h>  
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
 #include <sys/time.h>
+
+#define BUFFSIZE 1024
+#define MAXCLIENTS 10
 
 int find(char** arr, char* key, int size) {
 	int ret = -1;
@@ -21,11 +24,10 @@ int main(int argc, char* argv[]) {
 	fd_set rfds;
 	int max_fd;
 	
-	int max_clients = 10;
-	int clients[max_clients];
-	char* nicknames[max_clients];
+	int clients[MAXCLIENTS];
+	char* nicknames[MAXCLIENTS];
 	
-	for (int i = 0; i < max_clients; i++) {
+	for (int i = 0; i < MAXCLIENTS; i++) {
 		clients[i] = 0;
 		nicknames[i] = calloc(1, sizeof(char));
 		nicknames[i][0] = '\0';
@@ -63,7 +65,7 @@ int main(int argc, char* argv[]) {
 		FD_SET(sockfd, &rfds);
 		max_fd = sockfd;
 		
-		for(int i = 0; i < max_clients; i++) {
+		for(int i = 0; i < MAXCLIENTS; i++) {
 			int sd = clients[i];
 			if (sd > 0) FD_SET(sd, &rfds);
 			if (sd > max_fd) max_fd = sd;
@@ -85,19 +87,21 @@ int main(int argc, char* argv[]) {
 			
 			char temp[1024];
 			strcpy(temp, "Henlo my fren! Users currently on server:\n\n");
-			for(int i = 0; i < max_clients; i++) {
+			for(int i = 0; i < MAXCLIENTS; i++) {
 				if (nicknames[i][0] != '\0') {
+					strcat(temp, "- ");
 					strcat(temp, nicknames[i]);
+					strcat(temp, "\n");
 				}
 			}
-			strcat(temp, "Please choose your nickname: ");
-			if (send(newsocket, temp, strlen(temp), 0) != strlen(temp)) {
-				perror("send");
-				exit(1);
-			}
+			
+			send(newsocket, temp, strlen(temp), 0);
+			strcpy(temp, "\nChoose your nickname: ");
+			send(newsocket, temp, strlen(temp), 0);
+			
 			printf("welcome message send\n");
 			
-			for(int i = 0; i < max_clients; i++) {
+			for(int i = 0; i < MAXCLIENTS; i++) {
 				if (clients[i] == 0) {
 					clients[i] = newsocket;
 					printf("client added to clients\n\n");
@@ -106,48 +110,78 @@ int main(int argc, char* argv[]) {
 			}
 		}
 		
-		for(int i = 0; i < max_clients; i++) {
-			int sd = clients[i];
-			char* nick = nicknames[i];
+		for(int i = 0; i < MAXCLIENTS; i++) {
+			//fetch file descriptor and nickname
+			int clientFd = clients[i];
+			char* clientNick = nicknames[i];
 			
-			if (FD_ISSET(sd, &rfds)) {
-				int readBuffer[1024];
+			//if something awaits of the fd, read it
+			if (FD_ISSET(clientFd, &rfds)) {
+				//we create a new readBuffer
+				char readBuffer[BUFFSIZE];
+				//we read from the fd
+				int readSize = read(clientFd, readBuffer, BUFFSIZE);
+				//get rid of trailing newline
+				readBuffer[readSize - 1] = '\0';
 				
-				int readsize = read(sd, readBuffer, 1024);
-				if (readsize == 0) {
-					close(sd);
-					printf("%s disconnected\n", nicknames[i]);
+				//if he didn't send anything, he just disconnected
+				if (readSize == 0) {
+					close(clientFd);
+					printf("%s disconnected\n", clientNick);
 					
+					//reset his fd and nickname
 					clients[i] = 0;
 					nicknames[i][0] = '\0';
-				} else {
-					if (nick[0] == '\0') {
-						strcpy(nicknames[i], readBuffer);
+				} else { //if he sent something, let's process it
+					//we fetch the first word of the message - it'll be useful later
+					char* firstWord = strtok(readBuffer, " ");
+					
+					//if he doesn't have a nick yet, his first word of first mess will be it
+					if (clientNick[0] == '\0') {
+						//if he chose an existing nickname, make him chane it
+						if (find(nicknames, firstWord, MAXCLIENTS) != -1) {
+							char* reply = "That nickname is already taken, please choose something different: ";
+							send(clientFd, reply, strlen(reply), 0);
+							continue;
+						}
+						
+						//we copy the first word to be a nickname
+						strcpy(nicknames[i], firstWord);
+						//we print to console about it
 						printf("nickname established: %s\n", nicknames[i]);
 						
-						char temp[1024];
-						strcpy(temp, "You are now known as ");
-						strcat(temp, readBuffer);
-						send(sd, temp, strlen(temp), 0);
+						//we create a reply message
+						char reply[1024];
+						strcpy(reply, "You are now known as ");
+						strcat(reply, firstWord);
+						strcat(reply, "\n");
+						
+						send(clientFd, reply, strlen(reply), 0);
+						
+						//discard normal flow of messaging
 						continue;
 					}
-					
-					char mod[1024];
-					strcpy(mod, readBuffer);
-					char* to = strtok(mod, " ");
-					printf("%s tries to send mess to %s\n", nick, to);
-					int toindex = find(nicknames, to, max_clients);
-					printf("found %s at %d\n", to, toindex);
-					if (toindex >= 0) {
-						char mess[1024];
-						while (1) {
-							to = strtok(NULL, " ");
-							if (to == NULL) break;
-							strcat(mess, to);
-							strcat(mess, " ");
+					//we treat the first word as a recipients nickname
+					int recipientIndex = find(nicknames, firstWord, MAXCLIENTS);
+					//if recipient doesn't exist, tell it
+					if (recipientIndex == -1) {
+						char* reply = "Given recipient doesn't exist.\n";
+						send(clientFd, reply, strlen(reply), 0);
+						continue;
+					} else {
+						int recipientFd = clients[recipientIndex];
+						char* word = strtok(NULL, " ");
+						
+						send(recipientFd, clientNick, strlen(clientNick) + 1, 0);
+						char reply[1024];
+						strcpy(reply, "\n");
+						while (word != NULL) {
+							strcat(reply, word);
+							strcat(reply, " ");
+							word = strtok(NULL, " ");
 						}
-						printf("mess=%s\n", mess);
-						send(clients[toindex], mess, strlen(mess), 0);
+						strcat(reply, "\n");
+						send(recipientFd, reply, strlen(reply), 0);
 					}
 				}
 			}
