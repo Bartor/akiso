@@ -1,8 +1,5 @@
 section .data
    format: db "%d", 10, 0
-   xd: db "eax=%d ecx=%d", 10, 0
-   ind: db "xD", 10, 0
-   ind2: db "Xd", 10, 0
 
 section .text
     global main
