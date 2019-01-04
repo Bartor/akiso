@@ -25,13 +25,15 @@ first_after_sqrt:
         jmp forloop
     endloop:
     mov eax, ecx ; load the result to eax
+
     pop ebx
     pop edx
     pop ecx
     ret
 
-prime: ; if rdi is prime, eax <- 0, else eax <- 1
+prime: ; if edi is prime, eax <- 0, else eax <- 1
     push ebx
+    push ecx
 
     cmp edi, 2
     je is_prime
@@ -47,29 +49,44 @@ prime: ; if rdi is prime, eax <- 0, else eax <- 1
         xor edx, edx
         div ecx ; edx <- eax mod ecx
 
-        cmp edx, 0
+        cmp edx, 0 ; if it's 0, it's not prime
         je not_prime
         inc ecx
         cmp ecx, ebx
-        jle ploop
-        jmp is_prime
+        jle ploop ; until it's less or equal, go on
+        jmp is_prime ; if it's not, it's prime
     not_prime:
         mov eax, 1
+        pop ecx
         pop ebx
         ret
     is_prime:
         mov eax, 0
+        pop ecx
         pop ebx
         ret
 
 main:
-    mov edi, 11
-    call prime
+    mov ebx, 10000
+    mov ecx, 1
+    mloop:
+        inc ecx
+        cmp ecx, ebx
+        je mend
 
-    push eax
-    push dword format
-    call printf
-    add esp, 8
+        mov edi, ecx
+        call prime
 
+        cmp eax, 1
+        je mloop
+
+        push ecx
+        push dword format
+        call printf
+        add esp, 4
+        pop ecx
+
+        jmp mloop
+    mend:
     mov eax, 0
     ret
