@@ -1,5 +1,8 @@
 section .data
    format: db "%d", 10, 0
+   xd: db "eax=%d ecx=%d", 10, 0
+   ind: db "xD", 10, 0
+   ind2: db "Xd", 10, 0
 
 section .text
     global main
@@ -30,6 +33,9 @@ first_after_sqrt:
 prime: ; if rdi is prime, eax <- 0, else eax <- 1
     push ebx
 
+    cmp edi, 2
+    je is_prime
+
     mov eax, edi
     call first_after_sqrt ; we have one over sqrt(rdi) in eax
     mov ebx, eax ; save it in ebx
@@ -37,7 +43,10 @@ prime: ; if rdi is prime, eax <- 0, else eax <- 1
     mov ecx, 2
     ploop:
         mov eax, edi
+
+        xor edx, edx
         div ecx ; edx <- eax mod ecx
+
         cmp edx, 0
         je not_prime
         inc ecx
@@ -54,9 +63,7 @@ prime: ; if rdi is prime, eax <- 0, else eax <- 1
         ret
 
 main:
-    ;mov eax, 74
-    ;call first_after_sqrt
-    mov edi, 9
+    mov edi, 11
     call prime
 
     push eax
