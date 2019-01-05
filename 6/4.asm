@@ -2,7 +2,7 @@
 
 section .data
     formin: db "%d", 0
-    formout: db "%d", 10, 0
+    formout: db "%08x%08x%08x%08x", 10, 0
     one: dd 0x1
 
 section .bss
@@ -28,7 +28,7 @@ main:
     mloop:
         dec ecx
         cmp ecx, 0
-        je insert11
+        je mend
 
         pinsrd xmm1, ecx, 0
 
@@ -37,9 +37,6 @@ main:
         cmp ecx, 0
         je insert1
         jmp insertn
-
-        insert11:
-            pinsrd xmm1, [one], 0
 
         insert1:
             pinsrd xmm1, [one], 2
@@ -54,12 +51,20 @@ main:
     pextrd eax, xmm0, 0
     pextrd edx, xmm0, 2
 
-    mul edx
+    pinsrd xmm1, edx, 0
 
-    push eax
+    pmuldq xmm0, xmm1
+
+    pextrd [res], xmm0, 0
+    pextrd [res+4], xmm0, 1
+
+    push dword [res]
+    push dword [res+4]
+    push dword [res+8]
+    push dword [res+12]
     push formout
     call printf
-    add esp, 8
+    add esp, 20
 
     mov eax, 0
     ret
