@@ -1,5 +1,3 @@
-; to chyba mialo dzialac inaczej
-
 section .data
     formin: db "%d", 0
     formout: db "%08x%08x%08x%08x", 10, 0
@@ -44,7 +42,7 @@ main:
 
         insertn:
             pinsrd xmm1, ecx, 2
-            pmuldq xmm0, xmm1
+            pmuldq xmm0, xmm1 ;todo jezeli overflow, to przejsc na mnozenie 64 bitowych...?
             jmp mloop
 
     mend:
