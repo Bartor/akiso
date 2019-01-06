@@ -36,6 +36,8 @@ main:
         psrldq xmm0, 32 ; xmm0 = (_ dl * b _)
         pslldq xmm2, 64 ; xmm2 = (dh * b _ _)
 
+        pinsrd xmm0, [one], 3
+        pinsrd xmm2, [one], 1
         pmaddwd xmm2, xmm0 ; skomplikowane mnożenie, ale powinno być ok
 
         pshufd xmm0, xmm2, 0b00100001 ; rozmieszanie wyników z xmm2 w xmm0
