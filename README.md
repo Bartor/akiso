@@ -43,5 +43,6 @@ Zadania 3. i 4. znajdują się w jednym pliku `lsh.c`, w podfolderze `lsh`.
 1. Konwersja liczby dzisiętnej na szesnastkową w ASM 6502.
 2. Wypisywanie liczb pierwszych w ASM x86.
 3. Prosty kalkulator (czyta z stdin wyrażenie postaci "liczba działanie liczba" i wypisuje wynik) w ASM x86 z koprocesorem matematyczny.
-4. Liczenie silni na liczbach 128-bitowych przy użyciu SIDM (SSE2).
+4. Liczenie silni na liczbach 128-bitowych przy użyciu SIDM (SSE2), dwa sposoby.
 5. Rysowanie zbioru Mandelbrota (inicjalizacja trybu graficznego z kodu boot sectora).
+8. Funkcje liczące sin^_1(x) i sinh(x) z użyciem FPU.
