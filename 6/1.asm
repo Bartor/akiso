@@ -1,4 +1,3 @@
-; plik z wykładu
                 opt f-g-h+l+o+
                 org $1000
 
@@ -8,35 +7,40 @@ start           equ *
                 sta $80
                 lda >text
                 sta $81
-                ldy #0
-                lda #$a5
-                jsr binary
+                ldy #1
+                lda #$e5
+                jsr phex
 
                 lda <text
                 ldx >text
                 jsr $ff80
                 brk
 
-binary          sta byte
-                ldx #7
-bitslp          lda #'0'
-                asl byte
+phex            pha
+                jsr pxdig
+                pla
+                lsr @
+                lsr @
+                lsr @
+                lsr @
+
+pxdig           and #%00001111
+                ora #'0'
+                cmp #'9'+1
                 bcc pr
-                lda #'1'
+                ADC #'A'-'9'-2
+
 pr              sta ($80),y
-                iny
-                dex
-                bpl bitslp
+                dey
                 rts
 
 byte            dta b(0)
 
                 org $2000
 text            equ *
-                dta b(0),b(0),b(0),b(0)
-                dta b(0),b(0),b(0),b(0)
+                dta b(0),b(0)
                 dta b(10) ; '\n'
-                dta b(0)
+                dta a(0)
 
                 org $2E0
                 dta a(start)
