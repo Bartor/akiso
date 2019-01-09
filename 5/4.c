@@ -3,7 +3,6 @@
 
 
 void m(int*** arr, int size) {
-	srand(time(NULL));
 	*arr = (int**) calloc(size, sizeof(int*));
 	for (int i = 0; i < size; i++) {
 		(*arr)[i] = (int *) calloc(size, sizeof(int));
@@ -11,6 +10,7 @@ void m(int*** arr, int size) {
 }
 
 void v(int*** arr, int size, int* val) {
+	srand(time(NULL));
 	for (int i = 0; i < size; i++)
 		for (int j = 0; j < size; j++)
 			if (val == NULL) (*arr)[i][j] = rand();
