@@ -46,3 +46,8 @@ Zadania 3. i 4. znajdują się w jednym pliku `lsh.c`, w podfolderze `lsh`.
 4. Liczenie silni na liczbach 128-bitowych przy użyciu SIDM (SSE2), dwa sposoby.
 5. Rysowanie zbioru Mandelbrota (inicjalizacja trybu graficznego z kodu boot sectora).
 8. Funkcje liczące sin^_1(x) i sinh(x) z użyciem FPU.
+
+### Lista 7
+
+1. Liczba zmiennoprzecinkowa binarna dowolnej dokładności.
+2. SASM - simple assembler - assembluje kod dla procesora MARIE.
