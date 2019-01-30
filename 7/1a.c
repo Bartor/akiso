@@ -2,6 +2,8 @@
 // it doesn't really work that well, but it gives funny results, so i kept it
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <math.h>
 
 /*
