@@ -28,6 +28,13 @@ int search_opcode(char* opcode) {
 	return -1;
 }
 
+int verify(char* code) {
+	for (int i = 0; i < strlen(code); i++) {
+		if (code[i] != '0' && code[i] != '1') return 0;
+	}
+	return 1;
+}
+
 void convert(char* out, int number, int base) {
 	int i = 63;
 	int j = 0;
@@ -112,10 +119,16 @@ int main(void) {
 		char* word = strtok(line, d);
 		
 		int opcode = search_opcode(word);
+		
 		if (opcode == -1) {
+			
+			if (!verify(word)) {
+				printf("ERROR: %s is not a valid value\n", word);
+				return 1;
+			}
+			
 			sprintf(padded, "%.*s%s", strlen(word) >= 16 ? 0 : (int)(16-strlen(word)), "0000000000000000", word);
 			strcat(output, padded);
-			
 		} else {
 			strcat(output, opcodes[opcode].second);
 			
@@ -141,6 +154,10 @@ int main(void) {
 			
 			if (flag) continue;
 			
+			if (!verify(word)) {
+				printf("ERROR: %s is not a valid adress\n", word);
+				return 1;
+			}
 			sprintf(padded, "%.*s%s", strlen(word) >= 12 ? 0 : (int)(12-strlen(word)), "000000000000", word);
 			strcat(output, padded);
 		}
